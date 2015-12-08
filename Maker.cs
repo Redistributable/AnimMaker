@@ -91,7 +91,7 @@ namespace a32system.CSProgram.AnimMaker
                 for (y = 0; y < canv.Height; y++)
                     for (x = 0; x < canv.Width; x++)
                         // 画像のx, yピクセル部分の色情報取得 → 輝度取得（0 ～ 1） → 0～255のbyte値に直して書き込み
-                        stream.WriteByte((byte)(canv.GetPixel(x, y).GetBrightness() * 255));
+                        stream.WriteByte((byte)(canv.GetPixel(x, y).GetBrightness() * 127));
 
                 // 終端符号
                 //未実装
