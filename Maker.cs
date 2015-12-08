@@ -32,7 +32,7 @@ namespace a32system.CSProgram.AnimMaker
         // 公開フィールド
 
         /// <summary>
-        /// これから表示する画像一覧を追加します。
+        /// アニメーションに追加するフレーム(コマ)画像のリストを取得します。
         /// </summary>
         public ConvertImageList ImageList
         {
