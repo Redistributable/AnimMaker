@@ -22,6 +22,15 @@ namespace a32system.CSProgram.AnimMaker
         public Size Size { get; set; }
     }
 
+    /// <summary>
+    /// アニメーションのタイプを表します。
+    /// </summary>
+    enum AnimMode
+    {
+        GrayScale,
+        Color,
+    }
+
     class Maker
     {
         // 非公開フィールド
@@ -65,10 +74,21 @@ namespace a32system.CSProgram.AnimMaker
         // 公開メソッド
 
         /// <summary>
+        /// 指定したストリームへグレースケールのアニメーションを出力します。
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        public SaveResult SaveToStream(Stream stream)
+        {
+            return this.SaveToStream(stream, AnimMode.GrayScale);
+        }
+
+        /// <summary>
         /// 指定したストリームへアニメーションを出力します。
         /// </summary>
         /// <param name="stream"></param>
-        public SaveResult SaveToStream(Stream stream)
+        /// <param name="mode"></param>
+        public SaveResult SaveToStream(Stream stream, AnimMode mode)
         {
             // 書き込み可能かチェック
             if (!stream.CanWrite)
@@ -90,17 +110,28 @@ namespace a32system.CSProgram.AnimMaker
                 int x, y;
                 for (y = 0; y < canv.Height; y++)
                     for (x = 0; x < canv.Width; x++)
-                        // 画像のx, yピクセル部分の色情報取得 → 輝度取得（0 ～ 1） → 0～127のbyte値に直して書き込み
-                        stream.WriteByte((byte)(canv.GetPixel(x, y).GetBrightness() * 127));
-
-                /*
-                 * 書き込む値の値域について
-                 * 
-                 * rawファイルの調色は128階調。これは演習の資料にも記述してあった模様。
-                 * 終端符号が負の値になるということと128階調であることから推察するに、rawファイルには8ビットの符号付き整数で書き込まれている模様。
-                 * 読み込んだ際にintへキャストしてから値を使用していることがクライアントのソースコードからも分かる。
-                 * 
-                 */
+                        if (mode == AnimMode.GrayScale)
+                            // グレースケール
+                            // 画像のx, yピクセル部分の色情報取得 → 輝度取得（0 ～ 1） → 0～127のbyte値に直して書き込み
+                            stream.WriteByte((byte)(canv.GetPixel(x, y).GetBrightness() * 127));
+                            
+                            /*
+                             * 書き込む値の値域について
+                             * 
+                             * rawファイルの調色は128階調。これは演習の資料にも記述してあった模様。
+                             * 終端符号が負の値になるということと128階調であることから推察するに、rawファイルには8ビットの符号付き整数で書き込まれている模様。
+                             * 読み込んだ際にintへキャストしてから値を使用していることがクライアントのソースコードからも分かる。
+                             * 
+                             */
+                        else if (mode == AnimMode.Color)
+                        {
+                            // カラーモード (開発中)
+                            // 画像のx, yピクセル部分の色情報取得 → 各チャンネルの値（0 ～ 255） → 0 ～ 127のbyte値に直して書き込み
+                            Color targetPixel = canv.GetPixel(x, y);
+                            stream.WriteByte((byte)(targetPixel.R / 2));
+                            stream.WriteByte((byte)(targetPixel.G / 2));
+                            stream.WriteByte((byte)(targetPixel.B / 2));
+                        }
             }
 
             // 終端符号の書き込み
