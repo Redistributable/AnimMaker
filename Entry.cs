@@ -55,6 +55,8 @@ namespace a32system.CSProgram.AnimMaker
             Console.ReadKey();
 
             // 実際に書き込む
+            Console.WriteLine();
+            Console.WriteLine("出力しています...");
             FileStream fs = new FileStream("test.raw", FileMode.Create, FileAccess.Write, FileShare.None);
             m.SaveToStream(fs);
             fs.Close();
