@@ -24,6 +24,9 @@ namespace a32system.CSProgram.AnimMaker
             // アニメーション作成器(Maker.csで定義)
             Maker m = new Maker();
 
+
+            #region 連番のビットマップから読み込み（旧）
+            /*
             // アニメーションに使用する連番の画像ファイルが存在するディレクトリ
             string animPath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"\TestImages\test_bmp";
 
@@ -49,6 +52,32 @@ namespace a32system.CSProgram.AnimMaker
                 Console.WriteLine("追加します: " + Path.GetFileName(p));
                 m.ImageList.Add(Image.FromFile(p));
             }
+            */
+            #endregion
+
+            #region ＧＩＦアニメーションから取得
+
+            string gifPath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"\TestImages\test.gif";
+            string gifName = Path.GetFileName(gifPath);
+            if (!File.Exists(gifPath))
+            {
+                // GIFファイルが見つからない
+                Console.Write("GIFファイルが見つかりませんでした。");
+                Console.Write(gifPath);
+                Console.ReadKey();
+            }
+
+            // １フレーム追加されるごとに実行する処理を定義
+            m.ImageList.FrameAdded += (sender, e) =>
+            {
+                Console.WriteLine("{0} から {1:0000} 番目のフレームを追加しました。", gifName, e.Count);
+            };
+
+            // ＧＩＦの読み込み処理
+            m.ImageList.Add(gifPath);
+
+            #endregion
+
 
             // 準備完了
             Console.Write("続行するには何かキーを押してください。");
@@ -57,9 +86,17 @@ namespace a32system.CSProgram.AnimMaker
             // 実際に書き込む
             Console.WriteLine();
             Console.WriteLine("出力しています...");
+
             FileStream fs = new FileStream("test.raw", FileMode.Create, FileAccess.Write, FileShare.None);
-            m.SaveToStream(fs);
+            SaveResult result = m.SaveToStream(fs);
             fs.Close();
+
+            // 終了
+            Console.WriteLine("{0}フレームのｒａｗファイルが出力されました。", result.Count);
+            Console.Write("続行するには何かキーを押してください。");
+            Console.ReadKey();
+
+            Environment.Exit(0);
         }
     }
 }
