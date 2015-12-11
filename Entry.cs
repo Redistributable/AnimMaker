@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System.Windows.Forms;
 
 namespace a32system.CSProgram.AnimMaker
 {
@@ -28,7 +29,7 @@ namespace a32system.CSProgram.AnimMaker
             #region 連番のビットマップから読み込み（旧）
             /*
             // アニメーションに使用する連番の画像ファイルが存在するディレクトリ
-            string animPath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"\TestImages\test_bmp";
+            string animPath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"/TestImages\test_bmp";
 
 
             if (!Directory.Exists(animPath))
@@ -57,8 +58,38 @@ namespace a32system.CSProgram.AnimMaker
 
             #region ＧＩＦアニメーションから取得
 
-            string gifPath = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"\TestImages\test.gif";
-            string gifName = Path.GetFileName(gifPath);
+            // コマンドライン引数でファイルが指定されていればそちらを、そうでなければファイル選択ダイアログを表示
+            string gifPath;// = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "/TestImages/test.gif";
+            if (args.Length >= 1 && File.Exists(args[0]))
+                gifPath = args[0];
+            else
+            {
+                OpenFileDialog ofd = new OpenFileDialog();
+                
+                ofd.FileName = "";
+                ofd.InitialDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+                ofd.Filter =
+                    "アニメーションGIF(*.gif)|*.gif|すべてのファイル(*.*)|*.*";
+                ofd.FilterIndex = 1;
+                //タイトルを設定する
+                ofd.Title = "変換元のＧＩＦファイルを選択してください";
+                ofd.RestoreDirectory = true;
+                ofd.CheckFileExists = true;
+                ofd.CheckPathExists = true;
+
+                //ダイアログを表示する
+                if (ofd.ShowDialog() != DialogResult.OK)
+                {
+                    // GIFファイルが見つからない
+                    Console.WriteLine("変換元のファイルを指定してください。");
+                    Console.ReadKey();
+
+                    Environment.Exit(0);
+                }
+
+                gifPath = ofd.FileName;
+            }
+
             if (!File.Exists(gifPath))
             {
                 // GIFファイルが見つからない
@@ -66,6 +97,9 @@ namespace a32system.CSProgram.AnimMaker
                 Console.Write(gifPath);
                 Console.ReadKey();
             }
+
+            string gifName = Path.GetFileName(gifPath);
+
 
             // １フレーム追加されるごとに実行する処理を定義
             m.ImageList.FrameAdded += (sender, e) =>
@@ -87,7 +121,8 @@ namespace a32system.CSProgram.AnimMaker
             Console.WriteLine();
             Console.WriteLine("出力しています...");
 
-            FileStream fs = new FileStream("test.raw", FileMode.Create, FileAccess.Write, FileShare.None);
+            string outputPath = Path.GetDirectoryName(gifPath) + "/" + Path.GetFileNameWithoutExtension(gifPath) + ".raw";
+            FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None);
             SaveResult result = m.SaveToStream(fs);
             fs.Close();
 

@@ -200,7 +200,6 @@ I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\bi
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\bin\Debug\TestImages\test_bmp\test_000200.bmp
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\bin\Debug\AnimMaker.exe
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\bin\Debug\AnimMaker.pdb
-I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\obj\Debug\AnimMaker.csprojResolveAssemblyReference.cache
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\obj\Debug\AnimMaker.exe
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\obj\Debug\AnimMaker.pdb
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\bin\Debug\TestImages\test.gif
