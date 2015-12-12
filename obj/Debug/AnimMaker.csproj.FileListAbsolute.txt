@@ -203,3 +203,4 @@ I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\bi
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\obj\Debug\AnimMaker.exe
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\obj\Debug\AnimMaker.pdb
 I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\bin\Debug\TestImages\test.gif
+I:\Users\Network_AOTO-03\Development Sync Space\AnimMaker\AnimMaker\AnimMaker\obj\Debug\AnimMaker.csprojResolveAssemblyReference.cache

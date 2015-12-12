@@ -104,29 +104,63 @@ namespace a32system.CSProgram.AnimMaker
             // １フレーム追加されるごとに実行する処理を定義
             m.ImageList.FrameAdded += (sender, e) =>
             {
-                Console.WriteLine("{0} から {1:0000} 番目のフレームを追加しました。", gifName, e.Count);
+                Console.Write("{0} から {1:0000} 番目のフレームを追加しました。", gifName, e.Count + 1);
+                Console.SetCursorPosition(0, Console.CursorTop);
             };
-
+            
             // ＧＩＦの読み込み処理
             m.ImageList.Add(gifPath);
+            Console.WriteLine();
 
             #endregion
 
 
-            // 準備完了
+            // 準備完了 :: モード選択
+            Console.WriteLine("読み込みが完了しました。");
+            Console.WriteLine("出力モードを選択してください。");
+            Console.WriteLine("[ 0] モノクロ版");
+            Console.WriteLine("[ 1]：カラー版 (各チャンネル独立フレーム)");
+            Console.WriteLine("[ 2]：カラー版 (たぶん正しいほう)");
+            Console.WriteLine("[他]：ヘッダ付きカラー版（未実装）");
             Console.Write("続行するには何かキーを押してください。");
-            Console.ReadKey();
+            ConsoleKeyInfo key = Console.ReadKey();
+
+            AnimMode am;
+            switch (key.KeyChar)
+            {
+                case '1':
+                    // カラーモード (失敗したやつ)
+                    am = AnimMode.Color_2;
+                    break;
+                case '2':
+                    // カラーモード
+                    am = AnimMode.Color;
+                    break;
+                default:
+                    // その他＝グレー
+                    am = AnimMode.GrayScale;
+                    break;
+            }
 
             // 実際に書き込む
             Console.WriteLine();
-            Console.WriteLine("出力しています...");
+            Console.WriteLine("次のモードで出力を開始します。: " + am.ToString() + ", " + m.AnimationSize.Width + "x" + m.AnimationSize.Height);
 
+            // １フレーム書き込まれるごとに行う処理を定義
+            m.FrameSaved += (sender, e) =>
+            {
+                // 現在の進捗を表示する
+                Console.Write("出力しています... {0:0000} / {1:0000}", 1 + e.Count, m.ImageList.Count);
+                Console.SetCursorPosition(0, Console.CursorTop);
+            };
+            
             string outputPath = Path.GetDirectoryName(gifPath) + "/" + Path.GetFileNameWithoutExtension(gifPath) + ".raw";
             FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            SaveResult result = m.SaveToStream(fs);
+            SaveResult result = m.SaveToStream(fs, am);
             fs.Close();
 
             // 終了
+            Console.WriteLine();
             Console.WriteLine("{0}フレームのｒａｗファイルが出力されました。", result.Count);
             Console.Write("続行するには何かキーを押してください。");
             Console.ReadKey();

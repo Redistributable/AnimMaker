@@ -29,6 +29,7 @@ namespace a32system.CSProgram.AnimMaker
     {
         GrayScale,
         Color,
+        Color_2,
     }
 
     class Maker
@@ -58,6 +59,14 @@ namespace a32system.CSProgram.AnimMaker
         }
 
 
+        // 公開イベント
+        
+        /// <summary>
+        /// SaveToStreamメソッドで１フレーム書き込まれるごとに発生します。
+        /// </summary>
+        public event EventHandler<FrameSavedEventArgs> FrameSaved;
+
+
         // コンストラクタ
         
         /// <summary>
@@ -68,6 +77,9 @@ namespace a32system.CSProgram.AnimMaker
             // データフィールドの初期化
             this.imageList = new ConvertImageList();
             this.animationSize = new Size(160, 120);
+
+            // イベントデリゲートの初期化
+            this.FrameSaved = delegate { };
         }
 
 
@@ -95,6 +107,7 @@ namespace a32system.CSProgram.AnimMaker
                 throw new Exception("保存先には書き込み可能なストリームを設定してください。");
 
             // 書き込み
+            int i = 0;
             foreach (Image img in this.imageList)
             {
                 // img = 現在のフレーム
@@ -108,30 +121,70 @@ namespace a32system.CSProgram.AnimMaker
 
                 // ストリームへの書き込み
                 int x, y;
-                for (y = 0; y < canv.Height; y++)
-                    for (x = 0; x < canv.Width; x++)
-                        if (mode == AnimMode.GrayScale)
-                            // グレースケール
+                if (mode == AnimMode.GrayScale)
+                {
+                    // 輝度１チャンネル
+                    // グレースケール
+                    for (y = 0; y < canv.Height; y++)
+                        for (x = 0; x < canv.Width; x++)
                             // 画像のx, yピクセル部分の色情報取得 → 輝度取得（0 ～ 1） → 0～127のbyte値に直して書き込み
                             stream.WriteByte((byte)(canv.GetPixel(x, y).GetBrightness() * 127));
-                            
-                            /*
-                             * 書き込む値の値域について
-                             * 
-                             * rawファイルの調色は128階調。これは演習の資料にも記述してあった模様。
-                             * 終端符号が負の値になるということと128階調であることから推察するに、rawファイルには8ビットの符号付き整数で書き込まれている模様。
-                             * 読み込んだ際にintへキャストしてから値を使用していることがクライアントのソースコードからも分かる。
-                             * 
-                             */
-                        else if (mode == AnimMode.Color)
+
+                    /*
+                     * 書き込む値の値域について
+                     * 
+                     * rawファイルの調色は128階調。これは演習の資料にも記述してあった模様。
+                     * 終端符号が負の値になるということと128階調であることから推察するに、rawファイルには8ビットの符号付き整数で書き込まれている模様。
+                     * 読み込んだ際にintへキャストしてから値を使用していることがクライアントのソースコードからも分かる。
+                     * 
+                     */
+                }
+                else if (mode == AnimMode.Color_2)
+                {
+                    // 各原色計３チャンネル
+                    // カラーモード (開発中)
+                    // 画像のx, yピクセル部分の色情報取得 → 各チャンネルの値（0 ～ 255） → 0 ～ 127のbyte値に直して書き込み
+
+                    // Ｒチャンネル
+                    for (y = 0; y < canv.Height; y++)
+                        for (x = 0; x < canv.Width; x++)
+                            stream.WriteByte((byte)(Math.Max((canv.GetPixel(x, y).R / 2) - 1, 0)));
+
+                    //Console.WriteLine(i + "フレーム目Ｒチャンネル書き込み完了");
+
+                    // Ｇチャンネル
+                    for (y = 0; y < canv.Height; y++)
+                        for (x = 0; x < canv.Width; x++)
+                            stream.WriteByte((byte)(Math.Max((canv.GetPixel(x, y).G / 2) - 1, 0)));
+                    
+                    //Console.WriteLine(i + "フレーム目Ｇチャンネル書き込み完了");
+
+                    // Ｂチャンネル
+                    for (y = 0; y < canv.Height; y++)
+                        for (x = 0; x < canv.Width; x++)
+                            stream.WriteByte((byte)(Math.Max((canv.GetPixel(x, y).B / 2) - 1, 0)));
+                    
+                    //Console.WriteLine(i + "フレーム目Ｂチャンネル書き込み完了");
+                }
+                else if (mode == AnimMode.Color)
+                {
+                    // 各原色計３チャンネル
+                    // ＲＧＢ順番に書き込む
+                    for (y = 0; y < canv.Height; y++)
+                        for (x = 0; x < canv.Width; x++)
                         {
-                            // カラーモード (開発中)
-                            // 画像のx, yピクセル部分の色情報取得 → 各チャンネルの値（0 ～ 255） → 0 ～ 127のbyte値に直して書き込み
-                            Color targetPixel = canv.GetPixel(x, y);
-                            stream.WriteByte((byte)(targetPixel.R / 2));
-                            stream.WriteByte((byte)(targetPixel.G / 2));
-                            stream.WriteByte((byte)(targetPixel.B / 2));
+                            Color pixel = canv.GetPixel(x, y);
+                            stream.WriteByte((byte)(Math.Max((pixel.R / 2) - 1, 0)));
+                            stream.WriteByte((byte)(Math.Max((pixel.G / 2) - 1, 0)));
+                            stream.WriteByte((byte)(Math.Max((pixel.B / 2) - 1, 0)));
                         }
+                }
+
+                // イベントを発生する
+                this.FrameSaved(this, new FrameSavedEventArgs() { Count = i });
+
+                // カウントアップ
+                i++;
             }
 
             // 終端符号の書き込み
@@ -149,6 +202,17 @@ namespace a32system.CSProgram.AnimMaker
             
             // SaveResultを返す
             return result;
+        }
+
+
+        // 内部クラス
+
+        public class FrameSavedEventArgs : EventArgs
+        {
+            /// <summary>
+            /// 書き込みが完了したフレームの番号
+            /// </summary>
+            public int Count { get; set; }
         }
     }
 }
