@@ -25,11 +25,45 @@ namespace a32system.CSProgram.AnimMaker
     /// <summary>
     /// アニメーションのタイプを表します。
     /// </summary>
+    [Flags]
     enum AnimMode
     {
-        GrayScale,
-        Color,
-        Color_2,
+        // 値に関しては、Enum_AnimMode.txtを参照
+
+        /// <summary>
+        /// グレースケール
+        /// </summary>
+        GrayScale = 2,
+
+        /// <summary>
+        /// カラー
+        /// </summary>
+        Color = 4,
+
+        /// <summary>
+        /// チャンネル独立版カラー
+        /// </summary>
+        Color_2 = 8,
+
+        /// <summary>
+        /// 使用しないでください (内部用)
+        /// </summary>
+        WithHeader = 16,
+
+        /// <summary>
+        /// ヘッダ付きグレースケール
+        /// </summary>
+        GrayScaleWithHeader = 18,
+
+        /// <summary>
+        /// ヘッダ付きカラー
+        /// </summary>
+        ColorWithHeader = 20,
+
+        /// <summary>
+        /// ヘッダ付きチャンネル独立版カラー
+        /// </summary>
+        Color_2WithHeader = 24,
     }
 
     class Maker
@@ -105,6 +139,9 @@ namespace a32system.CSProgram.AnimMaker
             // 書き込み可能かチェック
             if (!stream.CanWrite)
                 throw new Exception("保存先には書き込み可能なストリームを設定してください。");
+            
+            // BinaryWriter初期化
+            BinaryWriter bw = new BinaryWriter(stream);
 
             // 書き込み
             int i = 0;
@@ -118,17 +155,42 @@ namespace a32system.CSProgram.AnimMaker
                 Graphics g = Graphics.FromImage(canv);
                 g.DrawImage(img, new Rectangle(0, 0, canv.Width, canv.Height));
                 g.Dispose();
+                
+                // ストリームへのヘッダの書き込み
+                if ((mode & AnimMode.WithHeader) == AnimMode.WithHeader)
+                {
+                    // WithHeaderフラグが指定されている
 
-                // ストリームへの書き込み
+                    // ヘッダ付きであることを表す先頭コード
+                    bw.Write((byte) 0xFF);
+                    bw.Write((byte) 0xFE);
+
+                    // アニメのモード
+                    bw.Write((byte) 0x00);
+                    if ((mode & AnimMode.GrayScale) == AnimMode.GrayScale)  bw.Write((byte) 0x01); // グレースケール
+                    else if ((mode & AnimMode.Color) == AnimMode.Color)     bw.Write((byte) 0x03); // カラー
+                    else if ((mode & AnimMode.Color_2) == AnimMode.Color_2) bw.Write((byte) 0x09); // 独自形式カラー
+
+                    // アニメのサイズ (各２バイト, 符号なし整数)
+                    bw.Write((ushort) this.animationSize.Width);
+                    bw.Write((ushort) this.animationSize.Height);
+
+                    // アニメのフレーム数
+                    bw.Write((ushort) this.imageList.Count);
+
+                    bw.Flush();
+                }
+
+                // ストリームへのアニメーションの書き込み
                 int x, y;
-                if (mode == AnimMode.GrayScale)
+                if ((mode & AnimMode.GrayScale) == AnimMode.GrayScale)
                 {
                     // 輝度１チャンネル
                     // グレースケール
                     for (y = 0; y < canv.Height; y++)
                         for (x = 0; x < canv.Width; x++)
                             // 画像のx, yピクセル部分の色情報取得 → 輝度取得（0 ～ 1） → 0～127のbyte値に直して書き込み
-                            stream.WriteByte((byte)(canv.GetPixel(x, y).GetBrightness() * 127));
+                            bw.Write((byte)(canv.GetPixel(x, y).GetBrightness() * 127));
 
                     /*
                      * 書き込む値の値域について
@@ -139,7 +201,7 @@ namespace a32system.CSProgram.AnimMaker
                      * 
                      */
                 }
-                else if (mode == AnimMode.Color_2)
+                else if ((mode & AnimMode.Color_2) == AnimMode.Color_2)
                 {
                     // 各原色計３チャンネル
                     // カラーモード (開発中)
@@ -148,25 +210,25 @@ namespace a32system.CSProgram.AnimMaker
                     // Ｒチャンネル
                     for (y = 0; y < canv.Height; y++)
                         for (x = 0; x < canv.Width; x++)
-                            stream.WriteByte((byte)(Math.Max((canv.GetPixel(x, y).R / 2) - 1, 0)));
+                            bw.Write((byte)(Math.Max((canv.GetPixel(x, y).R / 2) - 1, 0)));
 
                     //Console.WriteLine(i + "フレーム目Ｒチャンネル書き込み完了");
 
                     // Ｇチャンネル
                     for (y = 0; y < canv.Height; y++)
                         for (x = 0; x < canv.Width; x++)
-                            stream.WriteByte((byte)(Math.Max((canv.GetPixel(x, y).G / 2) - 1, 0)));
+                            bw.Write((byte)(Math.Max((canv.GetPixel(x, y).G / 2) - 1, 0)));
                     
                     //Console.WriteLine(i + "フレーム目Ｇチャンネル書き込み完了");
 
                     // Ｂチャンネル
                     for (y = 0; y < canv.Height; y++)
                         for (x = 0; x < canv.Width; x++)
-                            stream.WriteByte((byte)(Math.Max((canv.GetPixel(x, y).B / 2) - 1, 0)));
+                            bw.Write((byte)(Math.Max((canv.GetPixel(x, y).B / 2) - 1, 0)));
                     
                     //Console.WriteLine(i + "フレーム目Ｂチャンネル書き込み完了");
                 }
-                else if (mode == AnimMode.Color)
+                else if ((mode & AnimMode.Color) == AnimMode.Color)
                 {
                     // 各原色計３チャンネル
                     // ＲＧＢ順番に書き込む
@@ -174,9 +236,9 @@ namespace a32system.CSProgram.AnimMaker
                         for (x = 0; x < canv.Width; x++)
                         {
                             Color pixel = canv.GetPixel(x, y);
-                            stream.WriteByte((byte)(Math.Max((pixel.R / 2) - 1, 0)));
-                            stream.WriteByte((byte)(Math.Max((pixel.G / 2) - 1, 0)));
-                            stream.WriteByte((byte)(Math.Max((pixel.B / 2) - 1, 0)));
+                            bw.Write((byte)(Math.Max((pixel.R / 2) - 1, 0)));
+                            bw.Write((byte)(Math.Max((pixel.G / 2) - 1, 0)));
+                            bw.Write((byte)(Math.Max((pixel.B / 2) - 1, 0)));
                         }
                 }
 
@@ -190,7 +252,11 @@ namespace a32system.CSProgram.AnimMaker
             // 終端符号の書き込み
             // → 先頭ビットが負の符号を示すような値を書き込む。
             // → …… 200ぐらい？（適当）
-            stream.WriteByte((byte) 200);
+            bw.Write((byte) 200);
+
+            // BinaryWriterをFlush
+            // → Closeすると元のStreamまで閉じられてしまい、このメソッド利用後にStreamを利用できなくなってしまうため
+            bw.Flush();
 
             // SaveResultの初期化
             // SaveResult構造体は、このメソッドの戻り値専用の型。書き込まれたフレーム数とアニメーションの縦横サイズを格納する。

@@ -118,11 +118,12 @@ namespace a32system.CSProgram.AnimMaker
             // 準備完了 :: モード選択
             Console.WriteLine("読み込みが完了しました。");
             Console.WriteLine("出力モードを選択してください。");
-            Console.WriteLine("[ 0] モノクロ版");
-            Console.WriteLine("[ 1]：カラー版 (各チャンネル独立フレーム)");
-            Console.WriteLine("[ 2]：カラー版 (たぶん正しいほう)");
-            Console.WriteLine("[他]：ヘッダ付きカラー版（未実装）");
-            Console.Write("続行するには何かキーを押してください。");
+            Console.WriteLine("[0]：グレースケール版");
+            Console.WriteLine("[1]：カラー版 (各チャンネル独立フレーム)");
+            Console.WriteLine("[2]：カラー版 (たぶん正しいほう)");
+            Console.WriteLine("[3]：ヘッダ付きグレースケール版");
+            Console.WriteLine("[4]：ヘッダ付きカラー版");
+            Console.Write("続行するには番号キーを押してください。");
             ConsoleKeyInfo key = Console.ReadKey();
 
             AnimMode am;
@@ -135,6 +136,12 @@ namespace a32system.CSProgram.AnimMaker
                 case '2':
                     // カラーモード
                     am = AnimMode.Color;
+                    break;
+                case '3':
+                    am = AnimMode.GrayScaleWithHeader;
+                    break;
+                case '4':
+                    am = AnimMode.ColorWithHeader;
                     break;
                 default:
                     // その他＝グレー
