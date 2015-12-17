@@ -170,13 +170,35 @@ namespace a32system.CSProgram.AnimMaker
                     if ((mode & AnimMode.GrayScale) == AnimMode.GrayScale)  bw.Write((byte) 0x01); // グレースケール
                     else if ((mode & AnimMode.Color) == AnimMode.Color)     bw.Write((byte) 0x03); // カラー
                     else if ((mode & AnimMode.Color_2) == AnimMode.Color_2) bw.Write((byte) 0x09); // 独自形式カラー
+                    
+                    // エンディアン反転の準備
+                    MemoryStream ms = new MemoryStream();
+                    BinaryWriter mbw = new BinaryWriter(ms);
+                    byte[] mbuf;
+
+                    // エンディアン反転をしてから書き込むActionを定義
+                    Action<ushort> writeUShort = value =>
+                    {
+                        // MemoryStreamの頭のところに２バイトで値を書き込む
+                        mbw.Seek(0, SeekOrigin.Begin);
+                        mbw.Write(value);
+                        mbw.Flush();
+
+                        // byte配列へ変換し、逆の順番で書き込む
+                        mbuf = ms.ToArray();
+                        bw.Write(mbuf[1]);
+                        bw.Write(mbuf[0]);
+                    };
+
+                    // 階調モード (各２バイト, 符号なし整数, 127固定)
+                    writeUShort(0x7F);
 
                     // アニメのサイズ (各２バイト, 符号なし整数)
-                    bw.Write((ushort) this.animationSize.Width);
-                    bw.Write((ushort) this.animationSize.Height);
+                    writeUShort((ushort) this.animationSize.Width);
+                    writeUShort((ushort) this.animationSize.Height);
 
                     // アニメのフレーム数
-                    bw.Write((ushort) this.imageList.Count);
+                    writeUShort((ushort) this.imageList.Count);
 
                     bw.Flush();
                 }
