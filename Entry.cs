@@ -56,12 +56,12 @@ namespace a32system.CSProgram.AnimMaker
             */
             #endregion
 
-            #region ＧＩＦアニメーションから取得
+            #region 既存のアニメーションから取得
 
             // コマンドライン引数でファイルが指定されていればそちらを、そうでなければファイル選択ダイアログを表示
-            string gifPath;// = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "/TestImages/test.gif";
+            string animPath;// = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + "/TestImages/test.gif";
             if (args.Length >= 1 && File.Exists(args[0]))
-                gifPath = args[0];
+                animPath = args[0];
             else
             {
                 OpenFileDialog ofd = new OpenFileDialog();
@@ -69,10 +69,10 @@ namespace a32system.CSProgram.AnimMaker
                 ofd.FileName = "";
                 ofd.InitialDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
                 ofd.Filter =
-                    "アニメーションGIF(*.gif)|*.gif|すべてのファイル(*.*)|*.*";
+                    "対応するすべての形式(*.gif;*.raw)|*.gif;*.raw|アニメーションGIF(*.gif)|*.gif|ヘッダ付き演習raw形式(*.raw)|*.raw|すべてのファイル(*.*)|*.*";
                 ofd.FilterIndex = 1;
                 //タイトルを設定する
-                ofd.Title = "変換元のＧＩＦファイルを選択してください";
+                ofd.Title = "変換元のアニメーションファイルを選択してください";
                 ofd.RestoreDirectory = true;
                 ofd.CheckFileExists = true;
                 ofd.CheckPathExists = true;
@@ -87,18 +87,18 @@ namespace a32system.CSProgram.AnimMaker
                     Environment.Exit(0);
                 }
 
-                gifPath = ofd.FileName;
+                animPath = ofd.FileName;
             }
 
-            if (!File.Exists(gifPath))
+            if (!File.Exists(animPath))
             {
-                // GIFファイルが見つからない
-                Console.Write("GIFファイルが見つかりませんでした。");
-                Console.Write(gifPath);
+                // ファイルが見つからない
+                Console.WriteLine("ファイルが見つかりませんでした。");
+                Console.WriteLine(animPath);
                 Console.ReadKey();
             }
 
-            string gifName = Path.GetFileName(gifPath);
+            string gifName = Path.GetFileName(animPath);
 
 
             // １フレーム追加されるごとに実行する処理を定義
@@ -107,9 +107,21 @@ namespace a32system.CSProgram.AnimMaker
                 Console.Write("{0} から {1:0000} 番目のフレームを追加しました。", gifName, e.Count + 1);
                 Console.SetCursorPosition(0, Console.CursorTop);
             };
-            
-            // ＧＩＦの読み込み処理
-            m.ImageList.Add(gifPath);
+
+            // 読み込み処理
+            try
+            {
+                m.ImageList.Add(animPath);
+            }
+            catch (Exception ex)
+            {
+                // 読み込み失敗
+                Console.WriteLine("読み込みに失敗しました。");
+                Console.WriteLine(animPath);
+                Console.WriteLine(ex.Message);
+                Console.ReadKey();
+            }
+
             Console.WriteLine();
 
             #endregion
@@ -149,6 +161,41 @@ namespace a32system.CSProgram.AnimMaker
                     break;
             }
 
+            Console.WriteLine();
+            
+            // サイズ選択
+            Console.WriteLine("出力するアニメーションのサイズを選択してください。");
+            Console.WriteLine("出力モードを選択してください。");
+            Console.WriteLine("[0]：160x120 (演習標準)");
+            Console.WriteLine("[1]：80x60");
+            Console.WriteLine("[2]：320x240");
+            Console.WriteLine("[3]：640x480");
+            Console.WriteLine("[4]：800x600");
+            Console.Write("続行するには番号キーを押してください。");
+            key = Console.ReadKey();
+
+            Size animSize;
+            switch (key.KeyChar)
+            {
+                case '1':
+                    animSize = new Size(80, 60);
+                    break;
+                case '2':
+                    animSize = new Size(320, 240);
+                    break;
+                case '3':
+                    animSize = new Size(640, 480);
+                    break;
+                case '4':
+                    animSize = new Size(800, 600);
+                    break;
+                default:
+                    animSize = new Size(160, 120);
+                    break;
+            }
+
+            m.AnimationSize = animSize;
+
             // 実際に書き込む
             Console.WriteLine();
             Console.WriteLine("次のモードで出力を開始します。: " + am.ToString() + ", " + m.AnimationSize.Width + "x" + m.AnimationSize.Height);
@@ -161,7 +208,7 @@ namespace a32system.CSProgram.AnimMaker
                 Console.SetCursorPosition(0, Console.CursorTop);
             };
             
-            string outputPath = Path.GetDirectoryName(gifPath) + "/" + Path.GetFileNameWithoutExtension(gifPath) + ".raw";
+            string outputPath = Path.GetDirectoryName(animPath) + "/" + Path.GetFileNameWithoutExtension(animPath) + "_result.raw";
             FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None);
             SaveResult result = m.SaveToStream(fs, am);
             fs.Close();

@@ -40,6 +40,7 @@
     <Compile Include="Entry.cs" />
     <Compile Include="ImageList.cs" />
     <Compile Include="Maker.cs" />
+    <Compile Include="RawExtractor.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

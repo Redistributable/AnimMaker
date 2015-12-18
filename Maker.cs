@@ -117,6 +117,57 @@ namespace a32system.CSProgram.AnimMaker
         }
 
 
+        // 非公開メソッド
+
+        /// <summary>
+        /// 指定したBinaryWriterを使用してヘッダを書き込みます。
+        /// </summary>
+        /// <param name="writer"></param>
+        private void _writeHeader(BinaryWriter writer, AnimMode mode)
+        {
+            // ヘッダ付きであることを表す先頭コード
+            writer.Write((byte) 0xFF);
+            writer.Write((byte) 0xFE);
+
+            // アニメのモード
+            writer.Write((byte) 0x00);
+            if ((mode & AnimMode.GrayScale) == AnimMode.GrayScale)  writer.Write((byte) 0x01); // グレースケール
+            else if ((mode & AnimMode.Color) == AnimMode.Color)     writer.Write((byte) 0x03); // カラー
+            else if ((mode & AnimMode.Color_2) == AnimMode.Color_2) writer.Write((byte) 0x09); // 独自形式カラー
+                    
+            // エンディアン反転の準備
+            MemoryStream ms = new MemoryStream();
+            BinaryWriter mbw = new BinaryWriter(ms);
+            byte[] mbuf;
+
+            // エンディアン反転をしてから書き込むActionを定義
+            Action<ushort> writeUShort = value =>
+            {
+                // MemoryStreamの頭のところに２バイトで値を書き込む
+                mbw.Seek(0, SeekOrigin.Begin);
+                mbw.Write(value);
+                mbw.Flush();
+
+                // byte配列へ変換し、逆の順番で書き込む
+                mbuf = ms.ToArray();
+                writer.Write(mbuf[1]);
+                writer.Write(mbuf[0]);
+            };
+
+            // 階調モード (各２バイト, 符号なし整数, 127固定)
+            writeUShort(0x7F);
+
+            // アニメのサイズ (各２バイト, 符号なし整数)
+            writeUShort((ushort) this.animationSize.Width);
+            writeUShort((ushort) this.animationSize.Height);
+
+            // アニメのフレーム数
+            writeUShort((ushort) this.imageList.Count);
+
+            writer.Flush();
+        }
+
+
         // 公開メソッド
 
         /// <summary>
@@ -142,8 +193,16 @@ namespace a32system.CSProgram.AnimMaker
             
             // BinaryWriter初期化
             BinaryWriter bw = new BinaryWriter(stream);
+            
+            // ストリームへのヘッダの書き込み
+            if ((mode & AnimMode.WithHeader) == AnimMode.WithHeader)
+            {
+                // WithHeaderフラグが指定されている
+                // → ヘッダを書き込む
+                this._writeHeader(bw, mode);
+            }
 
-            // 書き込み
+            // アニメーションの書き込み
             int i = 0;
             foreach (Image img in this.imageList)
             {
@@ -156,54 +215,7 @@ namespace a32system.CSProgram.AnimMaker
                 g.DrawImage(img, new Rectangle(0, 0, canv.Width, canv.Height));
                 g.Dispose();
                 
-                // ストリームへのヘッダの書き込み
-                if ((mode & AnimMode.WithHeader) == AnimMode.WithHeader)
-                {
-                    // WithHeaderフラグが指定されている
-
-                    // ヘッダ付きであることを表す先頭コード
-                    bw.Write((byte) 0xFF);
-                    bw.Write((byte) 0xFE);
-
-                    // アニメのモード
-                    bw.Write((byte) 0x00);
-                    if ((mode & AnimMode.GrayScale) == AnimMode.GrayScale)  bw.Write((byte) 0x01); // グレースケール
-                    else if ((mode & AnimMode.Color) == AnimMode.Color)     bw.Write((byte) 0x03); // カラー
-                    else if ((mode & AnimMode.Color_2) == AnimMode.Color_2) bw.Write((byte) 0x09); // 独自形式カラー
-                    
-                    // エンディアン反転の準備
-                    MemoryStream ms = new MemoryStream();
-                    BinaryWriter mbw = new BinaryWriter(ms);
-                    byte[] mbuf;
-
-                    // エンディアン反転をしてから書き込むActionを定義
-                    Action<ushort> writeUShort = value =>
-                    {
-                        // MemoryStreamの頭のところに２バイトで値を書き込む
-                        mbw.Seek(0, SeekOrigin.Begin);
-                        mbw.Write(value);
-                        mbw.Flush();
-
-                        // byte配列へ変換し、逆の順番で書き込む
-                        mbuf = ms.ToArray();
-                        bw.Write(mbuf[1]);
-                        bw.Write(mbuf[0]);
-                    };
-
-                    // 階調モード (各２バイト, 符号なし整数, 127固定)
-                    writeUShort(0x7F);
-
-                    // アニメのサイズ (各２バイト, 符号なし整数)
-                    writeUShort((ushort) this.animationSize.Width);
-                    writeUShort((ushort) this.animationSize.Height);
-
-                    // アニメのフレーム数
-                    writeUShort((ushort) this.imageList.Count);
-
-                    bw.Flush();
-                }
-
-                // ストリームへのアニメーションの書き込み
+                // ストリームへのフレームの書き込み
                 int x, y;
                 if ((mode & AnimMode.GrayScale) == AnimMode.GrayScale)
                 {
